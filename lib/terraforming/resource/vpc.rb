@@ -11,6 +11,10 @@ module Terraforming
         self.new(client).tfstate
       end
 
+      def self.name(id, client: Aws::EC2::Client.new)
+        self.new(client).name(id)
+      end
+
       def initialize(client)
         @client = client
       end
@@ -38,6 +42,15 @@ module Terraforming
           }
 
           resources
+        end
+      end
+
+      def name(id)
+        v = vpcs.select { |e| e.vpc_id==id }
+        if v.length > 0
+          "${aws_vpc.#{module_name_of(v[0])}.id}"
+        else
+          id
         end
       end
 
