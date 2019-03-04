@@ -30,8 +30,6 @@ module Terraforming
           }
 
           attributes.merge!(tags_attributes_of(security_group))
-          attributes.merge!(egress_attributes_of(security_group))
-          attributes.merge!(ingress_attributes_of(security_group))
 
           resources["aws_security_group.#{module_name_of(security_group)}"] = {
             "type" => "aws_security_group",
@@ -41,24 +39,46 @@ module Terraforming
             }
           }
 
+          resources.merge!(security_group_rule(security_group))
+
           resources
         end
       end
 
       private
 
-      def ingress_attributes_of(security_group)
+      def security_group_rule(security_group)
         ingresses = dedup_permissions(security_group.ip_permissions, security_group.group_id)
-        attributes = { "ingress.#" => ingresses.length.to_s }
+        egresses = dedup_permissions(security_group.ip_permissions_egress, security_group.group_id)
+        rule_count = 0
+        resources = {}
 
         ingresses.each do |permission|
-          attributes.merge!(permission_attributes_of(security_group, permission, "ingress"))
+          resources.merge!(permission_state_of(security_group, permission, rule_count, "ingress"))
+          rule_count += 1
         end
 
-        attributes
+        egresses.each do |permission|
+          resources.merge!(permission_state_of(security_group, permission, rule_count, "egress"))
+          rule_count += 1
+        end
+
+        resources
       end
 
-      def egress_attributes_of(security_group)
+      def permission_state_of(security_group, permission, count, type)
+        resources = {}
+        resources["aws_security_group_rule.#{module_name_of(security_group)}#{count>0?"-#{count}":''}"] = {
+          "type" => "aws_security_group_rule",
+          "primary" => {
+            "id" => "sgrule-#{permission_hashcode_of(security_group, permission)}",
+            "attributes" => permission_attributes_of(security_group, permission, type)
+          }
+        }
+        resources
+      end
+
+      def egress_rules(security_group)
         egresses = dedup_permissions(security_group.ip_permissions_egress, security_group.group_id)
         attributes = { "egress.#" => egresses.length.to_s }
 
@@ -88,25 +108,22 @@ module Terraforming
         end
 
         attributes = {
-          "#{type}.#{hashcode}.from_port" => (permission.from_port || 0).to_s,
-          "#{type}.#{hashcode}.to_port" => (permission.to_port || 0).to_s,
-          "#{type}.#{hashcode}.protocol" => permission.ip_protocol,
-          "#{type}.#{hashcode}.cidr_blocks.#" => permission.ip_ranges.length.to_s,
-          "#{type}.#{hashcode}.prefix_list_ids.#" => permission.prefix_list_ids.length.to_s,
-          "#{type}.#{hashcode}.security_groups.#" => security_groups.length.to_s,
-          "#{type}.#{hashcode}.self" => self_referenced_permission?(security_group, permission).to_s,
+          "type" => type,
+          "from_port" => (permission.from_port || 0).to_s,
+          "to_port" => (permission.to_port || 0).to_s,
+          "protocol" => permission.ip_protocol,
+          "cidr_blocks.#" => permission.ip_ranges.length.to_s,
+          "prefix_list_ids.#" => permission.prefix_list_ids.length.to_s,
+          "self" => self_referenced_permission?(security_group, permission).to_s,
+          "security_group_id" => security_group.group_id,
         }
 
         permission.ip_ranges.each_with_index do |range, index|
-          attributes["#{type}.#{hashcode}.cidr_blocks.#{index}"] = range.cidr_ip
+          attributes["cidr_blocks.#{index}"] = range.cidr_ip
         end
 
         permission.prefix_list_ids.each_with_index do |prefix_list, index|
-          attributes["#{type}.#{hashcode}.prefix_list_ids.#{index}"] = prefix_list.prefix_list_id
-        end
-
-        security_groups.each do |group|
-          attributes["#{type}.#{hashcode}.security_groups.#{group_hashcode_of(group)}"] = group
+          attributes["prefix_list_ids.#{index}"] = prefix_list.prefix_list_id
         end
 
         attributes
