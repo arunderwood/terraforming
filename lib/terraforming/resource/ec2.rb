@@ -21,6 +21,10 @@ module Terraforming
 
       def tfstate
         instances.inject({}) do |resources, instance|
+
+          # do not import instances generated with autoscaling
+          next resources if instance.tags.select{ |t| t.key=="aws:autoscaling:groupName" }.length > 0
+
           in_vpc = in_vpc?(instance)
           block_devices = block_devices_of(instance)
 

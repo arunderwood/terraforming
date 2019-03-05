@@ -1,4 +1,7 @@
 <% instances.each do |instance| -%>
+<% if instance.tags.select{ |t| t.key=="aws:autoscaling:groupName" }.length > 0 -%>
+<% next -%>
+<% end -%>
 resource "aws_instance" "<%= module_name_of(instance) %>" {
     ami                         = "<%= instance.image_id %>"
     availability_zone           = "<%= instance.placement.availability_zone %>"
