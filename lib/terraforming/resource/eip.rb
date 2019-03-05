@@ -11,6 +11,10 @@ module Terraforming
         self.new(client).tfstate
       end
 
+      def self.name(id, client: Aws::EC2::Client.new)
+        self.new(client).name(id)
+      end
+
       def initialize(client)
         @client = client
       end
@@ -41,6 +45,15 @@ module Terraforming
           }
 
           resources
+        end
+      end
+
+      def name(id)
+        v = eips.select { |e| (vpc?(e) ? e.allocation_id : e.public_ip)==id }
+        if v.length > 0
+          "${aws_eip.#{module_name_of(v[0])}.id}"
+        else
+          id
         end
       end
 

@@ -38,6 +38,9 @@ module Terraforming
             "tag.#" => group.tags.length.to_s,
             "termination_policies.#" => "0",
             "vpc_zone_identifier.#" => vpc_zone_specified ? vpc_zone_identifier_of(group).length.to_s : "0",
+            "force_delete" => "false",
+            "metrics_granularity" => "1Minute",
+            "wait_for_capacity_timeout" => "10m",
           }
 
           group.tags.each do |tag|

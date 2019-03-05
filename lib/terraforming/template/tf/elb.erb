@@ -3,12 +3,12 @@
 resource "aws_elb" "<%= module_name_of(load_balancer) %>" {
     name                        = "<%= load_balancer.load_balancer_name %>"
   <%- if vpc_elb?(load_balancer) -%>
-    subnets                     = <%= load_balancer.subnets.inspect %>
+    subnets                     = <%= load_balancer.subnets.map{ |e| Terraforming::Resource::Subnet.name(e) }.inspect %>
   <%- else -%>
     availability_zones          = <%= load_balancer.availability_zones.inspect %>
   <%- end -%>
-    security_groups             = <%= load_balancer.security_groups.inspect %>
-    instances                   = <%= load_balancer.instances.map { |instance| instance.instance_id }.inspect %>
+    security_groups             = <%= load_balancer.security_groups.map{ |e| Terraforming::Resource::SecurityGroup.name(e) }.inspect %>
+    instances                   = <%= load_balancer.instances.map { |instance| Terraforming::Resource::EC2.name(instance.instance_id) }.inspect %>
     cross_zone_load_balancing   = <%= load_balancer_attributes.cross_zone_load_balancing.enabled %>
     idle_timeout                = <%= load_balancer_attributes.connection_settings.idle_timeout %>
     connection_draining         = <%= load_balancer_attributes.connection_draining.enabled %>

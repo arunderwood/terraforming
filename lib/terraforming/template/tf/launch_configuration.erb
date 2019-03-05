@@ -9,7 +9,7 @@ resource "aws_launch_configuration" "<%= module_name_of(launch_configuration) %>
 <%- unless launch_configuration.key_name.empty? -%>
     key_name                    = "<%= launch_configuration.key_name %>"
 <%- end -%>
-    security_groups             = <%= launch_configuration.security_groups.map { |sg| sg }.inspect %>
+    security_groups             = <%= launch_configuration.security_groups.map { |sg| Terraforming::Resource::SecurityGroup.name(sg) }.inspect %>
 <%- unless launch_configuration.associate_public_ip_address.nil? -%>
     associate_public_ip_address = <%= launch_configuration.associate_public_ip_address %>
 <%- end -%>
