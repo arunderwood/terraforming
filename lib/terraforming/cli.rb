@@ -6,6 +6,7 @@ module Terraforming
     class_option :profile, type: :string, desc: "AWS credentials profile"
     class_option :region, type: :string, desc: "AWS region"
     class_option :assume, type: :string, desc: "Role ARN to assume"
+    class_option :ids, type: :string, desc: "ids to import"
     class_option :use_bundled_cert,
                  type: :boolean,
                  desc: "Use the bundled CA certificate from AWS SDK"
@@ -240,9 +241,19 @@ module Terraforming
       Aws.use_bundled_cert! if options[:use_bundled_cert]
     end
 
+    def load_ids(options)
+      return [] if !options[:ids]
+      ids = []
+      File.foreach(options[:ids]){|line|
+        ids << line.chomp
+      }
+      ids
+    end
+
     def execute(klass, options)
       configure_aws(options)
-      result = options[:tfstate] ? tfstate(klass, options[:merge]) : tf(klass)
+      ids = load_ids(options)
+      result = options[:tfstate] ? tfstate(klass, ids, options[:merge]) : tf(klass, ids)
 
       if options[:tfstate] && options[:merge] && options[:overwrite]
         open(options[:merge], "w+") do |f|
@@ -254,14 +265,14 @@ module Terraforming
       end
     end
 
-    def tf(klass)
-      klass.tf
+    def tf(klass, ids)
+      klass.tf(ids: ids)
     end
 
-    def tfstate(klass, tfstate_path)
+    def tfstate(klass, ids, tfstate_path)
       tfstate = tfstate_path ? MultiJson.load(open(tfstate_path).read) : tfstate_skeleton
       tfstate["serial"] = tfstate["serial"] + 1
-      tfstate["modules"][0]["resources"] = tfstate["modules"][0]["resources"].merge(klass.tfstate)
+      tfstate["modules"][0]["resources"] = tfstate["modules"][0]["resources"].merge(klass.tfstate(ids: ids))
       MultiJson.encode(tfstate, pretty: true)
     end
 

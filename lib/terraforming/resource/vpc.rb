@@ -3,20 +3,21 @@ module Terraforming
     class VPC
       include Terraforming::Util
 
-      def self.tf(client: Aws::EC2::Client.new)
-        self.new(client).tf
+      def self.tf(ids: [], client: Aws::EC2::Client.new)
+        self.new(client, ids).tf
       end
 
-      def self.tfstate(client: Aws::EC2::Client.new)
-        self.new(client).tfstate
+      def self.tfstate(ids: [], client: Aws::EC2::Client.new)
+        self.new(client, ids).tfstate
       end
 
       def self.name(id, client: Aws::EC2::Client.new)
-        self.new(client).name(id)
+        self.new(client, []).name(id)
       end
 
-      def initialize(client)
+      def initialize(client, ids)
         @client = client
+        @ids = ids
       end
 
       def tf
@@ -69,7 +70,8 @@ module Terraforming
       end
 
       def vpcs
-        @client.describe_vpcs.map(&:vpcs).flatten
+        return @client.describe_vpcs.map(&:vpcs).flatten if @ids.empty?
+        @client.describe_vpcs.map(&:vpcs).flatten.select{ |e| @ids.include?(e.vpc_id) }
       end
 
       def vpc_attribute(vpc, attribute)
