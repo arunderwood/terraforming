@@ -11,6 +11,10 @@ module Terraforming
         self.new(client).tfstate
       end
 
+      def self.name(id, client: Aws::EC2::Client.new)
+        self.new(client).name(id)
+      end
+
       def initialize(client)
         @client = client
       end
@@ -42,6 +46,15 @@ module Terraforming
           resources.merge!(security_group_rule(security_group))
 
           resources
+        end
+      end
+
+      def name(id)
+        v = security_groups.select { |e| e.group_id==id }
+        if v.length > 0
+          "${aws_security_group.#{module_name_of(v[0])}.id}"
+        else
+          id
         end
       end
 
