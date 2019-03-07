@@ -3,20 +3,21 @@ module Terraforming
     class Subnet
       include Terraforming::Util
 
-      def self.tf(client: Aws::EC2::Client.new)
-        self.new(client).tf
+      def self.tf(ids: [], client: Aws::EC2::Client.new)
+        self.new(client, ids).tf
       end
 
-      def self.tfstate(client: Aws::EC2::Client.new)
-        self.new(client).tfstate
+      def self.tfstate(ids: [], client: Aws::EC2::Client.new)
+        self.new(client, ids).tfstate
       end
 
       def self.name(id, client: Aws::EC2::Client.new)
-        self.new(client).name(id)
+        self.new(client, []).name(id)
       end
 
-      def initialize(client)
+      def initialize(client, ids)
         @client = client
+        @ids = ids
       end
 
       def tf
@@ -57,7 +58,8 @@ module Terraforming
       private
 
       def subnets
-        @client.describe_subnets.map(&:subnets).flatten
+        return @client.describe_subnets.map(&:subnets).flatten if @ids.empty?
+        @client.describe_subnets.map(&:subnets).flatten.select{ |e| @ids.include?(e.subnet_id) }
       end
 
       def module_name_of(subnet)

@@ -3,20 +3,21 @@ module Terraforming
     class SecurityGroup
       include Terraforming::Util
 
-      def self.tf(client: Aws::EC2::Client.new)
-        self.new(client).tf
+      def self.tf(ids: [], client: Aws::EC2::Client.new)
+        self.new(client, ids).tf
       end
 
-      def self.tfstate(client: Aws::EC2::Client.new)
-        self.new(client).tfstate
+      def self.tfstate(ids: [], client: Aws::EC2::Client.new)
+        self.new(client, ids).tfstate
       end
 
       def self.name(id, client: Aws::EC2::Client.new)
-        self.new(client).name(id)
+        self.new(client, []).name(id)
       end
 
-      def initialize(client)
+      def initialize(client, ids)
         @client = client
+        @ids = ids
       end
 
       def tf
@@ -189,7 +190,8 @@ module Terraforming
       end
 
       def security_groups
-        @client.describe_security_groups.map(&:security_groups).flatten
+        return @client.describe_security_groups.map(&:security_groups).flatten if @ids.empty?
+        @client.describe_security_groups.map(&:security_groups).flatten.select{ |e| @ids.include?(e.group_id) }
       end
 
       def security_groups_in(permission, security_group)
