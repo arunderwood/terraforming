@@ -5,8 +5,8 @@ resource "aws_alb" "<%= module_name_of(load_balancer) %>" {
     idle_timeout    = <%= load_balancer_attributes["idle_timeout.timeout_seconds"] %>
     internal        = <%= internal?(load_balancer).to_s %>
     name            = "<%= load_balancer.load_balancer_name %>"
-    security_groups = <%= load_balancer.security_groups.inspect %>
-    subnets         = <%= load_balancer.availability_zones.map { |az| az.subnet_id }.inspect %>
+    security_groups = <%= load_balancer.security_groups.map { |e| Terraforming::Resource::SecurityGroup.name(e) }.inspect %>
+    subnets         = <%= load_balancer.availability_zones.map { |az| Terraforming::Resource::Subnet.name(az.subnet_id) }.inspect %>
 
     enable_deletion_protection = <%= load_balancer_attributes["deletion_protection.enabled"].to_s %>
 

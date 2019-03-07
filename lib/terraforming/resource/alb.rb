@@ -3,16 +3,21 @@ module Terraforming
     class ALB
       include Terraforming::Util
 
-      def self.tf(client: Aws::ElasticLoadBalancingV2::Client.new)
-        self.new(client).tf
+      def self.tf(ids: [], client: Aws::ElasticLoadBalancingV2::Client.new)
+        self.new(client, ids).tf
       end
 
-      def self.tfstate(client: Aws::ElasticLoadBalancingV2::Client.new)
-        self.new(client).tfstate
+      def self.tfstate(ids: [], client: Aws::ElasticLoadBalancingV2::Client.new)
+        self.new(client, ids).tfstate
       end
 
-      def initialize(client)
+      def self.name(id, client: Aws::ElasticLoadBalancingV2::Client.new)
+        self.new(client, []).name(id)
+      end
+
+      def initialize(client, ids)
         @client = client
+        @ids = ids
       end
 
       def tf
@@ -49,6 +54,15 @@ module Terraforming
         end
       end
 
+      def name(id)
+        v = load_balancerss.select { |e| e.load_balancer_arn==id }
+        if v.length > 0
+          "${aws_alb.#{module_name_of(v[0])}.id}"
+        else
+          id
+        end
+      end
+
       private
 
       def access_logs_attributes_of(load_balancer_attributes)
@@ -65,7 +79,8 @@ module Terraforming
       end
 
       def load_balancers
-        @client.describe_load_balancers.load_balancers
+        return @client.describe_load_balancers.load_balancers if @ids.empty?
+        @client.describe_load_balancers.load_balancers.select{ |e| @ids.include?(e.load_balancer_arn) }
       end
 
       def load_balancer_attributes_of(load_balancer)
