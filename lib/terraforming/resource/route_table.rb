@@ -3,16 +3,21 @@ module Terraforming
     class RouteTable
       include Terraforming::Util
 
-      def self.tf(client: Aws::EC2::Client.new)
-        self.new(client).tf
+      def self.tf(ids: [], client: Aws::EC2::Client.new)
+        self.new(client, ids).tf
       end
 
-      def self.tfstate(client: Aws::EC2::Client.new)
-        self.new(client).tfstate
+      def self.tfstate(ids: [], client: Aws::EC2::Client.new)
+        self.new(client, ids).tfstate
       end
 
-      def initialize(client)
+      def self.name(id, client: Aws::EC2::Client.new)
+        self.new(client, []).name(id)
+      end
+
+      def initialize(client, ids)
         @client = client
+        @ids = ids
       end
 
       def tf
@@ -58,6 +63,8 @@ module Terraforming
 
       def route_tables
         @client.describe_route_tables.map(&:route_tables).flatten
+        return @client.describe_route_tables.map(&:route_tables).flatten if @ids.empty?
+        @client.describe_route_tables.map(&:route_tables).flatten.select{ |e| @ids.include?(e.route_table_id) }
       end
 
       def routes_attributes_of(route_table)

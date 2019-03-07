@@ -3,16 +3,21 @@ module Terraforming
     class InternetGateway
       include Terraforming::Util
 
-      def self.tf(client: Aws::EC2::Client.new)
-        self.new(client).tf
+      def self.tf(ids: [], client: Aws::EC2::Client.new)
+        self.new(client, ids).tf
       end
 
-      def self.tfstate(client: Aws::EC2::Client.new)
-        self.new(client).tfstate
+      def self.tfstate(ids: [], client: Aws::EC2::Client.new)
+        self.new(client, ids).tfstate
       end
 
-      def initialize(client)
+      def self.name(id, client: Aws::EC2::Client.new)
+        self.new(client, []).name(id)
+      end
+
+      def initialize(client, ids)
         @client = client
+        @ids = ids
       end
 
       def tf
@@ -40,10 +45,20 @@ module Terraforming
         end
       end
 
+      def name(id)
+        v = internet_gateways.select { |e| e.internet_gateway_id==id }
+        if v.length > 0
+          "${aws_internet_gateway.#{module_name_of(v[0])}.id}"
+        else
+          id
+        end
+      end
+
       private
 
       def internet_gateways
-        @client.describe_internet_gateways.map(&:internet_gateways).flatten
+        return @client.describe_internet_gateways.map(&:internet_gateways).flatten if @ids.empty?
+        @client.describe_internet_gateways.map(&:internet_gateways).flatten.select{ |e| @ids.include?(e.internet_gateway_id) }
       end
 
       def module_name_of(internet_gateway)

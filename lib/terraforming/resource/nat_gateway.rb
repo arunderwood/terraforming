@@ -3,16 +3,21 @@ module Terraforming
     class NATGateway
       include Terraforming::Util
 
-      def self.tf(client: Aws::EC2::Client.new)
-        self.new(client).tf
+      def self.tf(ids: [], client: Aws::EC2::Client.new)
+        self.new(client, ids).tf
       end
 
-      def self.tfstate(client: Aws::EC2::Client.new)
-        self.new(client).tfstate
+      def self.tfstate(ids: [], client: Aws::EC2::Client.new)
+        self.new(client, ids).tfstate
       end
 
-      def initialize(client)
+      def self.name(id, client: Aws::EC2::Client.new)
+        self.new(client, []).name(id)
+      end
+
+      def initialize(client, ids)
         @client = client
+        @ids = ids
       end
 
       def tf
@@ -43,10 +48,20 @@ module Terraforming
         end
       end
 
+      def name(id)
+        v = nat_gateways.select { |e| e.nat_gateway_id==id }
+        if v.length > 0
+          "${aws_nat_gateway.#{module_name_of(v[0])}.id}"
+        else
+          id
+        end
+      end
+
       private
 
       def nat_gateways
-        @client.describe_nat_gateways.nat_gateways
+        return @client.describe_nat_gateways.nat_gateways if @ids.empty?
+        @client.describe_nat_gateways.nat_gateways.select{ |e| @ids.include?(e.nat_gateway_id) }
       end
 
       def module_name_of(nat_gateway)
