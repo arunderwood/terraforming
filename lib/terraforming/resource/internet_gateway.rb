@@ -58,7 +58,7 @@ module Terraforming
 
       def internet_gateways
         return @client.describe_internet_gateways.map(&:internet_gateways).flatten if @ids.empty?
-        @client.describe_internet_gateways.map(&:internet_gateways).flatten.select{ |e| @ids.include?(e.internet_gateway_id) }
+        @client.describe_internet_gateways.map(&:internet_gateways).flatten.select{ |e| @ids.include?(e.attachments[0].vpc_id) }
       end
 
       def module_name_of(internet_gateway)

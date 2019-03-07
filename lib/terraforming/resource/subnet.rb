@@ -59,7 +59,7 @@ module Terraforming
 
       def subnets
         return @client.describe_subnets.map(&:subnets).flatten if @ids.empty?
-        @client.describe_subnets.map(&:subnets).flatten.select{ |e| @ids.include?(e.subnet_id) }
+        @client.describe_subnets.map(&:subnets).flatten.select{ |e| @ids.include?(e.vpc_id) }
       end
 
       def module_name_of(subnet)

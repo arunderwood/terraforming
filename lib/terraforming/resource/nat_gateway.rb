@@ -61,7 +61,7 @@ module Terraforming
 
       def nat_gateways
         return @client.describe_nat_gateways.nat_gateways if @ids.empty?
-        @client.describe_nat_gateways.nat_gateways.select{ |e| @ids.include?(e.nat_gateway_id) }
+        @client.describe_nat_gateways.nat_gateways.select{ |e| @ids.include?(e.nat_gateway_addresses[0].allocation_id) }
       end
 
       def module_name_of(nat_gateway)

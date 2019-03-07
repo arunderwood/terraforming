@@ -62,9 +62,8 @@ module Terraforming
       end
 
       def route_tables
-        @client.describe_route_tables.map(&:route_tables).flatten
         return @client.describe_route_tables.map(&:route_tables).flatten if @ids.empty?
-        @client.describe_route_tables.map(&:route_tables).flatten.select{ |e| @ids.include?(e.route_table_id) }
+        @client.describe_route_tables.map(&:route_tables).flatten.select{ |e| @ids.include?(e.vpc_id) }
       end
 
       def routes_attributes_of(route_table)

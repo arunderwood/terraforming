@@ -191,7 +191,7 @@ module Terraforming
 
       def security_groups
         return @client.describe_security_groups.map(&:security_groups).flatten if @ids.empty?
-        @client.describe_security_groups.map(&:security_groups).flatten.select{ |e| @ids.include?(e.group_id) }
+        @client.describe_security_groups.map(&:security_groups).flatten.select{ |e| @ids.include?(e.vpc_id) }
       end
 
       def security_groups_in(permission, security_group)
