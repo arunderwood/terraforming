@@ -3,16 +3,17 @@ module Terraforming
     class ELB
       include Terraforming::Util
 
-      def self.tf(client: Aws::ElasticLoadBalancing::Client.new)
-        self.new(client).tf
+      def self.tf(ids: [], client: Aws::ElasticLoadBalancing::Client.new)
+        self.new(client, ids).tf
       end
 
-      def self.tfstate(client: Aws::ElasticLoadBalancing::Client.new)
-        self.new(client).tfstate
+      def self.tfstate(ids: [], client: Aws::ElasticLoadBalancing::Client.new)
+        self.new(client, ids).tfstate
       end
 
-      def initialize(client)
+      def initialize(client, ids)
         @client = client
+        @ids = ids
       end
 
       def tf
@@ -180,7 +181,8 @@ module Terraforming
       end
 
       def load_balancers
-        @client.describe_load_balancers.map(&:load_balancer_descriptions).flatten
+        return @client.describe_load_balancers.map(&:load_balancer_descriptions).flatten if @ids.empty?
+        @client.describe_load_balancers.map(&:load_balancer_descriptions).flatten.select{ |e| @ids.include?(e.vpc_id) }
       end
 
       def load_balancer_attributes_of(load_balancer)

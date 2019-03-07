@@ -3,20 +3,21 @@ module Terraforming
     class EC2
       include Terraforming::Util
 
-      def self.tf(client: Aws::EC2::Client.new)
-        self.new(client).tf
+      def self.tf(ids: [], client: Aws::EC2::Client.new)
+        self.new(client, ids).tf
       end
 
-      def self.tfstate(client: Aws::EC2::Client.new)
-        self.new(client).tfstate
+      def self.tfstate(ids: [], client: Aws::EC2::Client.new)
+        self.new(client, ids).tfstate
       end
 
       def self.name(id, client: Aws::EC2::Client.new)
-        self.new(client).name(id)
+        self.new(client, []).name(id)
       end
 
-      def initialize(client)
+      def initialize(client, ids)
         @client = client
+        @ids = ids
       end
 
       def tf
@@ -122,7 +123,12 @@ module Terraforming
       end
 
       def instances
-        @client.describe_instances.map(&:reservations).flatten.map(&:instances).flatten.reject do |instance|
+        if @ids.empty?
+          inst = @client.describe_instances.map(&:reservations).flatten.map(&:instances).flatten
+        else
+          inst = @client.describe_instances.map(&:reservations).flatten.map(&:instances).flatten.select{ |e| @ids.include?(e.instance_id) }
+        end
+        inst.reject do |instance|
           instance.state.name == "terminated"
         end
       end

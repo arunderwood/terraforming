@@ -3,16 +3,17 @@ module Terraforming
     class AutoScalingGroup
       include Terraforming::Util
 
-      def self.tf(client: Aws::AutoScaling::Client.new)
-        self.new(client).tf
+      def self.tf(ids: [], client: Aws::AutoScaling::Client.new)
+        self.new(client, ids).tf
       end
 
-      def self.tfstate(client: Aws::AutoScaling::Client.new)
-        self.new(client).tfstate
+      def self.tfstate(ids: [], client: Aws::AutoScaling::Client.new)
+        self.new(client, ids).tfstate
       end
 
-      def initialize(client)
+      def initialize(client, ids)
         @client = client
+        @ids = ids
       end
 
       def tf
@@ -70,7 +71,8 @@ module Terraforming
       private
 
       def auto_scaling_groups
-        @client.describe_auto_scaling_groups.map(&:auto_scaling_groups).flatten
+        return @client.describe_auto_scaling_groups.map(&:auto_scaling_groups).flatten if @ids.empty?
+        @client.describe_auto_scaling_groups.map(&:auto_scaling_groups).flatten.select{ |e| @ids.include?(e.launch_configuration_name) }
       end
 
       def module_name_of(group)

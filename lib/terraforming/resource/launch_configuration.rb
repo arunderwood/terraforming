@@ -3,20 +3,21 @@ module Terraforming
     class LaunchConfiguration
       include Terraforming::Util
 
-      def self.tf(client: Aws::AutoScaling::Client.new)
-        self.new(client).tf
+      def self.tf(ids: [], client: Aws::AutoScaling::Client.new)
+        self.new(client, ids).tf
       end
 
-      def self.tfstate(client: Aws::AutoScaling::Client.new)
-        self.new(client).tfstate
+      def self.tfstate(ids: [], client: Aws::AutoScaling::Client.new)
+        self.new(client, ids).tfstate
       end
 
       def self.name(id, client: Aws::AutoScaling::Client.new)
-        self.new(client).name(id)
+        self.new(client, []).name(id)
       end
 
-      def initialize(client)
+      def initialize(client, ids)
         @client = client
+        @ids = ids
       end
 
       def tf
@@ -108,7 +109,8 @@ module Terraforming
       end
 
       def launch_configurations
-        @client.describe_launch_configurations.map(&:launch_configurations).flatten
+        return @client.describe_launch_configurations.map(&:launch_configurations).flatten if @ids.empty?
+        @client.describe_launch_configurations.map(&:launch_configurations).flatten.select{ |e| @ids.include?(e.launch_configuration_name) }
       end
 
       def module_name_of(launch_configuration)
