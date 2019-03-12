@@ -76,7 +76,7 @@ module Terraforming
 
       def network_interfaces
         return @client.describe_network_interfaces.map(&:network_interfaces).flatten if @ids.empty?
-        @client.describe_network_interfaces.map(&:network_interfaces).flatten.select{ |e| @ids.include?(e.vpc_id) }
+        @client.describe_network_interfaces.map(&:network_interfaces).flatten.select{ |e| @ids.include?(e.network_interface_id) }
       end
     end
   end
