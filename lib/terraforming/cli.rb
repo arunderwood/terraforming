@@ -21,6 +21,11 @@ module Terraforming
       execute(Terraforming::Resource::AutoScalingGroup, options)
     end
 
+    desc "ass", "AutoScaling Schedule"
+    def ass
+      execute(Terraforming::Resource::AutoScalingSchedule, options)
+    end
+
     desc "cwa", "CloudWatch Alarm"
     def cwa
       execute(Terraforming::Resource::CloudWatchAlarm, options)

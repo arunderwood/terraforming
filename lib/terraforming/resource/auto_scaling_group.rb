@@ -11,6 +11,10 @@ module Terraforming
         self.new(client, ids).tfstate
       end
 
+      def self.name(id, client: Aws::AutoScaling::Client.new)
+        self.new(client, []).name(id)
+      end
+
       def initialize(client, ids)
         @client = client
         @ids = ids
@@ -68,11 +72,20 @@ module Terraforming
         end
       end
 
+      def name(id)
+        v = auto_scaling_groups.select { |e| e.auto_scaling_group_name==id }
+        if v.length > 0
+          "${aws_autoscaling_group.#{module_name_of(v[0])}.id}"
+        else
+          id
+        end
+      end
+
       private
 
       def auto_scaling_groups
         return @client.describe_auto_scaling_groups.map(&:auto_scaling_groups).flatten if @ids.empty?
-        @client.describe_auto_scaling_groups.map(&:auto_scaling_groups).flatten.select{ |e| @ids.include?(e.launch_configuration_name) }
+        @client.describe_auto_scaling_groups.map(&:auto_scaling_groups).flatten.select{ |e| @ids.include?(e.auto_scaling_group_name) }
       end
 
       def module_name_of(group)

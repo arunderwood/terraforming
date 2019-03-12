@@ -1,0 +1,16 @@
+<% auto_scaling_schedules.each do |schedule| -%>
+resource "aws_autoscaling_schedule" "<%= module_name_of(schedule) %>" {
+  scheduled_action_name  = "<%= schedule.scheduled_action_name %>"
+  min_size               = <%= schedule.min_size %>
+  max_size               = <%= schedule.max_size %>
+  desired_capacity       = <%= schedule.desired_capacity %>
+  recurrence             = "<%= schedule.recurrence %>"
+<% if schedule.start_time %>
+  start_time             = "<%= schedule.start_time.strftime("%Y-%m-%dT%H:%M:%SZ") %>"
+<% end -%>
+<% if schedule.end_time %>
+  end_time               = "<%= schedule.end_time.strftime("%Y-%m-%dT%H:%M:%SZ") %>"
+<% end -%>
+  autoscaling_group_name = "<%= Terraforming::Resource::AutoScalingGroup.name(schedule.auto_scaling_group_name) %>"
+}
+<% end -%>
