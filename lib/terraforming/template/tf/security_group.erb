@@ -29,8 +29,11 @@ resource "aws_security_group_rule" "<%= module_name_of(security_group) %><%= rul
     cidr_blocks     = <%= permission.ip_ranges.map { |range| range.cidr_ip }.inspect %>
 <%- end -%>
 <%- if permission.user_id_group_pairs.length > 0 -%>
-<%- self_referenced = self_referenced_permission?(security_group, permission) -%>
+<%- if self_referenced = self_referenced_permission?(security_group, permission) -%>
     self            = <%= self_referenced %>
+<%- elsif permission.user_id_group_pairs[0].group_id.length > 0 -%>
+    source_security_group_id = "<%= Terraforming::Resource::SecurityGroup.name(permission.user_id_group_pairs[0].group_id) %>"
+<%- end -%>
 <%- end -%>
     security_group_id = "${aws_security_group.<%= module_name_of(security_group) %>.id}"
 }
@@ -51,8 +54,11 @@ resource "aws_security_group_rule" "<%= module_name_of(security_group) %><%= rul
     cidr_blocks     = <%= permission.ip_ranges.map { |range| range.cidr_ip }.inspect %>
 <%- end -%>
 <%- if permission.user_id_group_pairs.length > 0 -%>
-<%- self_referenced = self_referenced_permission?(security_group, permission) -%>
+<%- if self_referenced = self_referenced_permission?(security_group, permission) -%>
     self            = <%= self_referenced %>
+<%- elsif permission.user_id_group_pairs[0].group_id.length > 0 -%>
+    source_security_group_id = "<%= Terraforming::Resource::SecurityGroup.name(permission.user_id_group_pairs[0].group_id) %>"
+<%- end -%>
 <%- end -%>
     security_group_id = "${aws_security_group.<%= module_name_of(security_group) %>.id}"
 }
