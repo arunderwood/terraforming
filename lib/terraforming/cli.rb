@@ -248,11 +248,7 @@ module Terraforming
 
     def load_ids(options)
       return [] if !options[:ids]
-      ids = []
-      File.foreach(options[:ids]){|line|
-        ids << line.chomp
-      }
-      ids
+      options[:ids].split(',')
     end
 
     def execute(klass, options)

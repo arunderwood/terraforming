@@ -3,16 +3,17 @@ module Terraforming
     class Route53Record
       include Terraforming::Util
 
-      def self.tf(client: Aws::Route53::Client.new)
-        self.new(client).tf
+      def self.tf(ids: [], client: Aws::Route53::Client.new)
+        self.new(client, ids).tf
       end
 
-      def self.tfstate(client: Aws::Route53::Client.new)
-        self.new(client).tfstate
+      def self.tfstate(ids: [], client: Aws::Route53::Client.new)
+        self.new(client, ids).tfstate
       end
 
-      def initialize(client)
+      def initialize(client, ids)
         @client = client
+        @ids = ids
       end
 
       def tf
@@ -67,7 +68,15 @@ module Terraforming
       private
 
       def hosted_zones
-        @client.list_hosted_zones.map(&:hosted_zones).flatten
+        if @ids.empty?
+          @client.list_hosted_zones.map(&:hosted_zones).flatten
+        else
+          zone_list = @client.list_hosted_zones.map(&:hosted_zones).flatten.select{ |e| @ids.include?(zone_id_of(e)) }
+        end
+      end
+
+      def zone_id_of(hosted_zone)
+        hosted_zone.id.gsub(%r{\A/hostedzone/}, "")
       end
 
       def record_id_of(record, zone_id)
